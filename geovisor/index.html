@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoVisor | Sistema de Información Geográfica</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Leaflet Draw CSS (para medición) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+
+    <!-- Leaflet MiniMap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.min.css" />
+
+    <!-- Leaflet EasyPrint CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-easyprint@2.1.9/dist/bundle.css" />
+
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <i class="fas fa-globe-americas"></i>
+                <h1>GeoVisor</h1>
+            </div>
+            <div class="header-tools">
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Buscar ubicación..." />
+                    <button id="searchBtn" class="btn-search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-icon" id="coordinatesBtn" title="Coordenadas">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
+                    <button class="btn-icon" id="fullscreenBtn" title="Pantalla completa">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar - Layer Control -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-layer-group"></i> Capas</h2>
+                <button class="btn-toggle" id="sidebarToggle">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- Capas Base -->
+                <div class="layer-section">
+                    <h3>Capas Base</h3>
+                    <div class="layer-list" id="baseLayersList">
+                        <div class="layer-item">
+                            <input type="radio" name="baseLayer" id="osm" value="osm" checked>
+                            <label for="osm">
+                                <i class="fas fa-map"></i> OpenStreetMap
+                            </label>
+                        </div>
+                        <div class="layer-item">
+                            <input type="radio" name="baseLayer" id="satellite" value="satellite">
+                            <label for="satellite">
+                                <i class="fas fa-satellite"></i> Satélite
+                            </label>
+                        </div>
+                        <div class="layer-item">
+                            <input type="radio" name="baseLayer" id="dark" value="dark">
+                            <label for="dark">
+                                <i class="fas fa-moon"></i> Modo Oscuro
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capas de GeoServer -->
+                <div class="layer-section">
+                    <h3>Capas de Datos</h3>
+                    <div class="geoserver-config">
+                        <input type="text" id="geoserverUrl" placeholder="URL de GeoServer"
+                               value="http://localhost:8080/geoserver/wms">
+                        <button id="loadLayersBtn" class="btn-primary">
+                            <i class="fas fa-sync-alt"></i> Cargar Capas
+                        </button>
+                    </div>
+                    <div class="layer-list" id="dataLayersList">
+                        <!-- Las capas se cargarán dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Herramientas -->
+                <div class="layer-section">
+                    <h3>Herramientas</h3>
+                    <div class="tools-grid">
+                        <button class="tool-btn" id="measureDistanceBtn" title="Medir Distancia">
+                            <i class="fas fa-ruler"></i>
+                            <span>Distancia</span>
+                        </button>
+                        <button class="tool-btn" id="measureAreaBtn" title="Medir Área">
+                            <i class="fas fa-draw-polygon"></i>
+                            <span>Área</span>
+                        </button>
+                        <button class="tool-btn" id="printBtn" title="Imprimir Mapa">
+                            <i class="fas fa-print"></i>
+                            <span>Imprimir</span>
+                        </button>
+                        <button class="tool-btn" id="clearMeasurementsBtn" title="Limpiar Mediciones">
+                            <i class="fas fa-eraser"></i>
+                            <span>Limpiar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Map Container -->
+        <div class="map-wrapper">
+            <div id="map"></div>
+
+            <!-- Coordinates Display -->
+            <div class="coordinates-display" id="coordinatesDisplay">
+                <span id="mouseCoords">Lat: 0.000000, Lng: 0.000000</span>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>Cargando capas...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet Draw JS (para medición) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <!-- Leaflet MiniMap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.min.js"></script>
+
+    <!-- Leaflet EasyPrint JS -->
+    <script src="https://unpkg.com/leaflet-easyprint@2.1.9/dist/bundle.js"></script>
+
+    <!-- Leaflet WMS -->
+    <script src="https://unpkg.com/leaflet.wms@0.2.0/dist/leaflet.wms.js"></script>
+
+    <!-- Custom JS -->
+    <script src="js/map.js"></script>
+</body>
+</html>
