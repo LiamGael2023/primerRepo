@@ -1,0 +1,75 @@
+{
+  "geoserverConfig": {
+    "defaultUrl": "http://localhost:8080/geoserver/wms",
+    "timeout": 30000,
+    "version": "1.1.0",
+    "format": "image/png",
+    "transparent": true
+  },
+  "presetServers": [
+    {
+      "name": "Local GeoServer",
+      "url": "http://localhost:8080/geoserver/wms",
+      "description": "Servidor GeoServer local de desarrollo"
+    },
+    {
+      "name": "GeoServer Demo",
+      "url": "http://demo.geoserver.org/geoserver/wms",
+      "description": "Servidor de demostración público de GeoServer"
+    },
+    {
+      "name": "Producción",
+      "url": "https://tu-servidor.com/geoserver/wms",
+      "description": "Servidor de producción"
+    }
+  ],
+  "defaultLayers": [
+    {
+      "name": "topp:states",
+      "title": "Estados de USA",
+      "workspace": "topp",
+      "enabled": false,
+      "opacity": 0.8
+    },
+    {
+      "name": "ne:countries",
+      "title": "Países del Mundo",
+      "workspace": "ne",
+      "enabled": false,
+      "opacity": 1.0
+    }
+  ],
+  "mapConfig": {
+    "defaultCenter": {
+      "lat": 40.416775,
+      "lng": -3.703790,
+      "zoom": 6
+    },
+    "minZoom": 2,
+    "maxZoom": 20
+  },
+  "searchConfig": {
+    "nominatimUrl": "https://nominatim.openstreetmap.org/search",
+    "language": "es",
+    "limit": 10
+  },
+  "measurementConfig": {
+    "distanceUnits": ["m", "km", "mi"],
+    "areaUnits": ["m²", "km²", "ha", "acres"],
+    "defaultDistanceUnit": "km",
+    "defaultAreaUnit": "km²"
+  },
+  "printConfig": {
+    "sizes": ["Current", "A4Portrait", "A4Landscape", "A3Portrait", "A3Landscape"],
+    "defaultSize": "A4Landscape",
+    "format": "png",
+    "filename": "geovisor_map"
+  },
+  "uiConfig": {
+    "theme": "dark",
+    "language": "es",
+    "showCoordinates": true,
+    "showMinimap": true,
+    "showScale": true
+  }
+}
