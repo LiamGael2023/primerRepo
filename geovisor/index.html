@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GeoVisor | Sistema de Información Geográfica</title>
 
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -20,132 +23,160 @@
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="logo-section">
-                <i class="fas fa-globe-americas"></i>
-                <h1>GeoVisor</h1>
-            </div>
-            <div class="header-tools">
-                <div class="search-container">
-                    <input type="text" id="searchInput" placeholder="Buscar ubicación..." />
-                    <button id="searchBtn" class="btn-search">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-                <div class="header-actions">
-                    <button class="btn-icon" id="coordinatesBtn" title="Coordenadas">
+    <!-- Navbar Bootstrap -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="fas fa-globe-americas me-2 fs-4"></i>
+                <span class="fw-bold">GeoVisor</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <div class="input-group" style="width: 350px;">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Buscar ubicación...">
+                        <button class="btn btn-light" type="button" id="searchBtn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-light" id="coordinatesBtn" title="Mostrar/Ocultar Coordenadas">
                         <i class="fas fa-crosshairs"></i>
                     </button>
-                    <button class="btn-icon" id="fullscreenBtn" title="Pantalla completa">
+                    <button class="btn btn-light" id="fullscreenBtn" title="Pantalla completa">
                         <i class="fas fa-expand"></i>
                     </button>
                 </div>
             </div>
         </div>
-    </header>
+    </nav>
 
     <!-- Main Container -->
-    <div class="main-container">
-        <!-- Sidebar - Layer Control -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2><i class="fas fa-layer-group"></i> Capas</h2>
-                <button class="btn-toggle" id="sidebarToggle">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            </div>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-auto sidebar" id="sidebar">
+                <div class="d-flex flex-column h-100">
+                    <div class="sidebar-header bg-light border-bottom p-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Panel de Control</h5>
+                        <button class="btn btn-sm btn-outline-secondary" id="sidebarToggle">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                    </div>
 
-            <div class="sidebar-content">
-                <!-- Capas Base -->
-                <div class="layer-section">
-                    <h3>Capas Base</h3>
-                    <div class="layer-list" id="baseLayersList">
-                        <div class="layer-item">
-                            <input type="radio" name="baseLayer" id="osm" value="osm" checked>
-                            <label for="osm">
-                                <i class="fas fa-map"></i> OpenStreetMap
-                            </label>
+                    <div class="sidebar-content flex-grow-1 overflow-auto p-3">
+                        <!-- Capas Base -->
+                        <div class="mb-4">
+                            <h6 class="text-muted text-uppercase mb-3">Capas Base</h6>
+                            <div class="list-group">
+                                <label class="list-group-item list-group-item-action">
+                                    <input class="form-check-input me-2" type="radio" name="baseLayer" id="osm" value="osm" checked>
+                                    <i class="fas fa-map me-2 text-primary"></i>OpenStreetMap
+                                </label>
+                                <label class="list-group-item list-group-item-action">
+                                    <input class="form-check-input me-2" type="radio" name="baseLayer" id="cartodb" value="cartodb">
+                                    <i class="fas fa-map-marked-alt me-2 text-primary"></i>CartoDB Positron
+                                </label>
+                                <label class="list-group-item list-group-item-action">
+                                    <input class="form-check-input me-2" type="radio" name="baseLayer" id="satellite" value="satellite">
+                                    <i class="fas fa-satellite me-2 text-primary"></i>Satélite HD
+                                </label>
+                                <label class="list-group-item list-group-item-action">
+                                    <input class="form-check-input me-2" type="radio" name="baseLayer" id="terrain" value="terrain">
+                                    <i class="fas fa-mountain me-2 text-primary"></i>Terreno
+                                </label>
+                                <label class="list-group-item list-group-item-action">
+                                    <input class="form-check-input me-2" type="radio" name="baseLayer" id="dark" value="dark">
+                                    <i class="fas fa-moon me-2 text-primary"></i>Modo Oscuro
+                                </label>
+                            </div>
                         </div>
-                        <div class="layer-item">
-                            <input type="radio" name="baseLayer" id="satellite" value="satellite">
-                            <label for="satellite">
-                                <i class="fas fa-satellite"></i> Satélite
-                            </label>
+
+                        <!-- Capas de GeoServer -->
+                        <div class="mb-4">
+                            <h6 class="text-muted text-uppercase mb-3">Capas de Datos</h6>
+                            <div class="mb-3">
+                                <input type="text" class="form-control mb-2" id="geoserverUrl"
+                                       placeholder="URL de GeoServer"
+                                       value="http://localhost:8080/geoserver/wms">
+                                <button class="btn btn-primary w-100" id="loadLayersBtn">
+                                    <i class="fas fa-sync-alt me-2"></i>Cargar Capas
+                                </button>
+                            </div>
+                            <div class="list-group" id="dataLayersList">
+                                <!-- Las capas se cargarán dinámicamente -->
+                            </div>
                         </div>
-                        <div class="layer-item">
-                            <input type="radio" name="baseLayer" id="dark" value="dark">
-                            <label for="dark">
-                                <i class="fas fa-moon"></i> Modo Oscuro
-                            </label>
+
+                        <!-- Herramientas -->
+                        <div class="mb-4">
+                            <h6 class="text-muted text-uppercase mb-3">Herramientas</h6>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <button class="btn btn-outline-primary w-100" id="measureDistanceBtn" title="Medir Distancia">
+                                        <i class="fas fa-ruler d-block mb-1"></i>
+                                        <small>Distancia</small>
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-primary w-100" id="measureAreaBtn" title="Medir Área">
+                                        <i class="fas fa-draw-polygon d-block mb-1"></i>
+                                        <small>Área</small>
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-secondary w-100" id="printBtn" title="Imprimir Mapa">
+                                        <i class="fas fa-print d-block mb-1"></i>
+                                        <small>Imprimir</small>
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-danger w-100" id="clearMeasurementsBtn" title="Limpiar Mediciones">
+                                        <i class="fas fa-eraser d-block mb-1"></i>
+                                        <small>Limpiar</small>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Capas de GeoServer -->
-                <div class="layer-section">
-                    <h3>Capas de Datos</h3>
-                    <div class="geoserver-config">
-                        <input type="text" id="geoserverUrl" placeholder="URL de GeoServer"
-                               value="http://localhost:8080/geoserver/wms">
-                        <button id="loadLayersBtn" class="btn-primary">
-                            <i class="fas fa-sync-alt"></i> Cargar Capas
-                        </button>
-                    </div>
-                    <div class="layer-list" id="dataLayersList">
-                        <!-- Las capas se cargarán dinámicamente -->
-                    </div>
-                </div>
-
-                <!-- Herramientas -->
-                <div class="layer-section">
-                    <h3>Herramientas</h3>
-                    <div class="tools-grid">
-                        <button class="tool-btn" id="measureDistanceBtn" title="Medir Distancia">
-                            <i class="fas fa-ruler"></i>
-                            <span>Distancia</span>
-                        </button>
-                        <button class="tool-btn" id="measureAreaBtn" title="Medir Área">
-                            <i class="fas fa-draw-polygon"></i>
-                            <span>Área</span>
-                        </button>
-                        <button class="tool-btn" id="printBtn" title="Imprimir Mapa">
-                            <i class="fas fa-print"></i>
-                            <span>Imprimir</span>
-                        </button>
-                        <button class="tool-btn" id="clearMeasurementsBtn" title="Limpiar Mediciones">
-                            <i class="fas fa-eraser"></i>
-                            <span>Limpiar</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Map Container -->
-        <div class="map-wrapper">
-            <div id="map"></div>
-
-            <!-- Coordinates Display -->
-            <div class="coordinates-display" id="coordinatesDisplay">
-                <span id="mouseCoords">Lat: 0.000000, Lng: 0.000000</span>
             </div>
 
-            <!-- Loading Spinner -->
-            <div class="loading-spinner" id="loadingSpinner">
-                <div class="spinner"></div>
-                <p>Cargando capas...</p>
+            <!-- Map Container -->
+            <div class="col">
+                <div class="map-wrapper">
+                    <div id="map"></div>
+
+                    <!-- Coordinates Display -->
+                    <div class="coordinates-display card shadow-sm" id="coordinatesDisplay">
+                        <div class="card-body p-2">
+                            <small class="font-monospace" id="mouseCoords">Lat: 0.000000, Lng: 0.000000</small>
+                        </div>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <div class="loading-spinner" id="loadingSpinner">
+                        <div class="card shadow-lg">
+                            <div class="card-body text-center">
+                                <div class="spinner-border text-primary mb-3" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <p class="mb-0">Cargando capas...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

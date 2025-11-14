@@ -38,14 +38,14 @@ class GeoVisor {
             zoom: 3,
             zoomControl: true,
             minZoom: 2,
-            maxZoom: 20
+            maxZoom: 22  // Permitir más zoom
         });
 
         // Intentar obtener la geolocalización del usuario
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    this.map.setView([position.coords.latitude, position.coords.longitude], 10);
+                    this.map.setView([position.coords.latitude, position.coords.longitude], 13);
                 },
                 (error) => {
                     console.log('No se pudo obtener la geolocalización:', error);
@@ -65,22 +65,37 @@ class GeoVisor {
     // Capas Base
     // ========================================
     initBaseLayers() {
-        // OpenStreetMap
+        // OpenStreetMap - Máximo zoom 19
         this.baseLayers.osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
         });
 
-        // Satélite (Esri World Imagery)
+        // CartoDB Positron - Excelente calidad hasta zoom 20
+        this.baseLayers.cartodb = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        });
+
+        // Esri World Imagery - Satélite de alta calidad hasta zoom 22
         this.baseLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri',
-            maxZoom: 19
+            attribution: 'Tiles © <a href="https://www.esri.com">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+            maxZoom: 22
         });
 
-        // Modo Oscuro (CartoDB Dark Matter)
+        // Stamen Terrain - Terreno con relieve
+        this.baseLayers.terrain = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png', {
+            attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            subdomains: 'abcd',
+            maxZoom: 18
+        });
+
+        // CartoDB Dark Matter - Modo oscuro
         this.baseLayers.dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap, © CartoDB',
-            maxZoom: 19
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
         });
 
         // Añadir la capa base por defecto
@@ -92,8 +107,8 @@ class GeoVisor {
     // Mini Mapa
     // ========================================
     initMiniMap() {
-        const miniMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
+        const miniMapLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, © CARTO'
         });
 
         this.miniMap = new L.Control.MiniMap(miniMapLayer, {
@@ -120,7 +135,7 @@ class GeoVisor {
             draw: {
                 polyline: {
                     shapeOptions: {
-                        color: '#00f7ff',
+                        color: '#0d6efd',
                         weight: 3
                     },
                     metric: true,
@@ -129,7 +144,7 @@ class GeoVisor {
                 },
                 polygon: {
                     shapeOptions: {
-                        color: '#ff006e',
+                        color: '#198754',
                         weight: 3
                     },
                     showArea: true,
@@ -153,10 +168,10 @@ class GeoVisor {
 
             if (type === 'polyline') {
                 const distance = this.calculateDistance(layer);
-                layer.bindPopup(`<strong>Distancia:</strong> ${distance}`).openPopup();
+                layer.bindPopup(`<div class="p-2"><strong>Distancia:</strong><br>${distance}</div>`).openPopup();
             } else if (type === 'polygon') {
                 const area = this.calculateArea(layer);
-                layer.bindPopup(`<strong>Área:</strong> ${area}`).openPopup();
+                layer.bindPopup(`<div class="p-2"><strong>Área:</strong><br>${area}</div>`).openPopup();
             }
 
             this.measurementLayers.addLayer(layer);
@@ -225,7 +240,7 @@ class GeoVisor {
         // Toggle display de coordenadas
         document.getElementById('coordinatesBtn').addEventListener('click', () => {
             const display = document.getElementById('coordinatesDisplay');
-            display.style.display = display.style.display === 'none' ? 'block' : 'none';
+            display.classList.toggle('hidden');
         });
     }
 
@@ -245,6 +260,11 @@ class GeoVisor {
             } else {
                 icon.className = 'fas fa-chevron-left';
             }
+
+            // Invalidar tamaño del mapa después de toggle
+            setTimeout(() => {
+                this.map.invalidateSize();
+            }, 300);
         });
 
         // Cambiar capa base
@@ -313,7 +333,7 @@ class GeoVisor {
         const loadingSpinner = document.getElementById('loadingSpinner');
 
         if (!geoserverUrl) {
-            this.showNotification('Por favor, ingresa una URL de GeoServer', 'error');
+            this.showNotification('Por favor, ingresa una URL de GeoServer', 'warning');
             return;
         }
 
@@ -347,13 +367,11 @@ class GeoVisor {
                     const layerTitle = titleNode ? titleNode.textContent : layerName;
 
                     // Crear elemento de capa
-                    const layerItem = document.createElement('div');
-                    layerItem.className = 'layer-item';
+                    const layerItem = document.createElement('label');
+                    layerItem.className = 'list-group-item list-group-item-action';
                     layerItem.innerHTML = `
-                        <input type="checkbox" id="layer-${index}" value="${layerName}">
-                        <label for="layer-${index}">
-                            <i class="fas fa-layer-group"></i> ${layerTitle}
-                        </label>
+                        <input class="form-check-input me-2" type="checkbox" id="layer-${index}" value="${layerName}">
+                        <i class="fas fa-layer-group me-2 text-primary"></i>${layerTitle}
                     `;
 
                     // Event listener para toggle de capa
@@ -370,7 +388,7 @@ class GeoVisor {
 
         } catch (error) {
             console.error('Error al cargar capas:', error);
-            this.showNotification('Error al conectar con GeoServer. Verifica la URL.', 'error');
+            this.showNotification('Error al conectar con GeoServer. Verifica la URL.', 'danger');
         } finally {
             loadingSpinner.classList.remove('active');
         }
@@ -411,7 +429,7 @@ class GeoVisor {
         }
 
         // Actualizar estilos de botones
-        document.querySelectorAll('.tool-btn').forEach(btn => {
+        document.querySelectorAll('.btn-outline-primary, .btn-outline-secondary').forEach(btn => {
             btn.classList.remove('active');
         });
 
@@ -439,7 +457,7 @@ class GeoVisor {
         this.drawnItems.clearLayers();
 
         // Remover estado activo de botones
-        document.querySelectorAll('.tool-btn').forEach(btn => {
+        document.querySelectorAll('.btn-outline-primary, .btn-outline-secondary').forEach(btn => {
             btn.classList.remove('active');
         });
 
@@ -473,19 +491,19 @@ class GeoVisor {
                 const lon = parseFloat(result.lon);
 
                 // Centrar el mapa en el resultado
-                this.map.setView([lat, lon], 13);
+                this.map.setView([lat, lon], 15);
 
                 // Añadir marcador
                 const marker = L.marker([lat, lon], {
                     icon: L.divIcon({
                         className: 'custom-search-marker',
-                        html: '<i class="fas fa-map-marker-alt" style="color: #ff006e; font-size: 2rem;"></i>',
+                        html: '<i class="fas fa-map-marker-alt text-danger" style="font-size: 2rem;"></i>',
                         iconSize: [30, 30],
                         iconAnchor: [15, 30]
                     })
                 }).addTo(this.map);
 
-                marker.bindPopup(`<strong>${result.display_name}</strong>`).openPopup();
+                marker.bindPopup(`<div class="p-2"><strong>${result.display_name}</strong></div>`).openPopup();
 
                 this.showNotification('Ubicación encontrada', 'success');
             } else {
@@ -494,7 +512,7 @@ class GeoVisor {
 
         } catch (error) {
             console.error('Error en la búsqueda:', error);
-            this.showNotification('Error al realizar la búsqueda', 'error');
+            this.showNotification('Error al realizar la búsqueda', 'danger');
         } finally {
             loadingSpinner.classList.remove('active');
         }
@@ -530,67 +548,57 @@ class GeoVisor {
     }
 
     // ========================================
-    // Mostrar Notificación
+    // Mostrar Notificación con Bootstrap
     // ========================================
     showNotification(message, type = 'info') {
-        // Crear elemento de notificación
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            background: ${type === 'error' ? '#ff006e' : type === 'success' ? '#00f7ff' : type === 'warning' ? '#ffd700' : '#7b2cbf'};
-            color: ${type === 'warning' ? '#000' : '#fff'};
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            z-index: 10000;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
-            animation: slideIn 0.3s ease-out;
+        // Mapear tipos a clases de Bootstrap
+        const typeMap = {
+            'info': 'info',
+            'success': 'success',
+            'warning': 'warning',
+            'danger': 'danger',
+            'error': 'danger'
+        };
+
+        const bootstrapType = typeMap[type] || 'info';
+
+        // Crear elemento de notificación con Bootstrap Toast
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${bootstrapType} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
         `;
-        notification.textContent = message;
 
-        document.body.appendChild(notification);
+        toastContainer.appendChild(toast);
+        document.body.appendChild(toastContainer);
 
-        // Remover después de 3 segundos
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease-in';
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        }, 3000);
+        // Inicializar y mostrar el toast
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: 3000
+        });
+
+        bsToast.show();
+
+        // Remover el contenedor después de que se oculte
+        toast.addEventListener('hidden.bs.toast', () => {
+            document.body.removeChild(toastContainer);
+        });
     }
 }
-
-// ========================================
-// Animaciones CSS para notificaciones
-// ========================================
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
 
 // ========================================
 // Inicializar GeoVisor cuando el DOM esté listo
