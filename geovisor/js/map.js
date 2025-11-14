@@ -78,10 +78,17 @@ class GeoVisor {
             maxZoom: 20
         });
 
-        // Esri World Imagery - Satélite de alta calidad hasta zoom 22
-        this.baseLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles © <a href="https://www.esri.com">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-            maxZoom: 22
+        // Google Satellite - Satélite de alta calidad hasta zoom 21
+        this.baseLayers.satellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            attribution: '© Google',
+            maxZoom: 21,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        // Esri World Boundaries and Places - Calles y límites
+        this.baseLayers.streets = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © <a href="https://www.esri.com">Esri</a>',
+            maxZoom: 20
         });
 
         // Stamen Terrain - Terreno con relieve
