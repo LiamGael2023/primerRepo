@@ -21,8 +21,8 @@ class GeoVisor {
         // Configuración de proyección UTM
         this.setupProjection();
 
-        // Coordenadas de inicio (ajustar según necesidad)
-        this.defaultCenter = [-12.0464, -77.0428]; // Lima, Perú
+        // Coordenadas de inicio
+        this.defaultCenter = [-10.094023, -78.152875];
         this.defaultZoom = 13;
 
         this.init();
@@ -75,18 +75,6 @@ class GeoVisor {
 
         // Posicionar controles de zoom
         this.map.zoomControl.setPosition('topright');
-
-        // Intentar obtener geolocalización
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    this.map.setView([position.coords.latitude, position.coords.longitude], 13);
-                },
-                (error) => {
-                    console.log('Geolocalización no disponible:', error);
-                }
-            );
-        }
     }
 
     // ========================================
@@ -340,6 +328,14 @@ class GeoVisor {
                 if (e.key === 'Enter') {
                     this.performSearch();
                 }
+            });
+        }
+
+        // Botón de Mi Ubicación
+        const btnMyLocation = document.getElementById('btnMyLocation');
+        if (btnMyLocation) {
+            btnMyLocation.addEventListener('click', () => {
+                this.goToMyLocation();
             });
         }
     }
@@ -733,8 +729,69 @@ class GeoVisor {
 
         // Resetear cuando el mouse sale del mapa
         this.map.on('mouseout', () => {
-            coordsDisplay.textContent = 'Lat: --, Lng: --';
+            const lat = this.map.getCenter().lat.toFixed(6);
+            const lng = this.map.getCenter().lng.toFixed(6);
+            coordsDisplay.textContent = `Lat: ${lat}, Lng: ${lng}`;
         });
+    }
+
+    // ========================================
+    // Ir a Mi Ubicación
+    // ========================================
+    goToMyLocation() {
+        if (!navigator.geolocation) {
+            this.showNotification('Geolocalización no disponible en tu navegador', 'warning');
+            return;
+        }
+
+        this.showNotification('Obteniendo tu ubicación...', 'info');
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // Centrar el mapa en la ubicación actual
+                this.map.setView([lat, lng], 16);
+
+                // Añadir marcador temporal
+                const marker = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        className: 'custom-location-marker',
+                        html: '<i class="fas fa-street-view text-primary" style="font-size: 2rem;"></i>',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 30]
+                    })
+                }).addTo(this.map);
+
+                marker.bindPopup(`<div class="p-2"><strong>Tu ubicación</strong><br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}</div>`).openPopup();
+
+                this.showNotification('Ubicación encontrada', 'success');
+            },
+            (error) => {
+                console.error('Error obteniendo ubicación:', error);
+                let message = 'No se pudo obtener tu ubicación';
+
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        message = 'Permiso de ubicación denegado. Habilita el acceso a tu ubicación.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message = 'Información de ubicación no disponible';
+                        break;
+                    case error.TIMEOUT:
+                        message = 'Tiempo de espera agotado obteniendo ubicación';
+                        break;
+                }
+
+                this.showNotification(message, 'danger');
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
     }
 
     // ========================================

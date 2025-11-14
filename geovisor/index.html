@@ -543,14 +543,19 @@
             </div>
 
             <!-- Contenedor del mapa -->
-            <div class="col-md-9 col-lg-10 p-0">
+            <div class="col-md-9 col-lg-10 p-0" style="position: relative;">
                 <div id="map"></div>
 
                 <!-- Display de coordenadas -->
                 <div id="coordinates-display">
                     <i class="fas fa-map-marker-alt"></i>
-                    <span id="mouse-coords">Lat: --, Lng: --</span>
+                    <span id="mouse-coords">Lat: -10.094023, Lng: -78.152875</span>
                 </div>
+
+                <!-- Botón de Mi Ubicación -->
+                <button id="btnMyLocation" class="btn-my-location" title="Ir a mi ubicación">
+                    <i class="fas fa-crosshairs"></i>
+                </button>
             </div>
         </div>
     </div>
