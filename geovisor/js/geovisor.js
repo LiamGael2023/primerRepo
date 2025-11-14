@@ -55,6 +55,7 @@ class GeoVisor {
         this.initDrawControls();
         this.initPrintControl();
         this.initEventListeners();
+        this.initCoordinatesDisplay();
         this.initLayerCategories();
         this.initWFSLayers();
     }
@@ -710,6 +711,30 @@ class GeoVisor {
             console.error('Error en la búsqueda:', error);
             this.showNotification('Error al realizar la búsqueda', 'danger');
         }
+    }
+
+    // ========================================
+    // Display de Coordenadas
+    // ========================================
+    initCoordinatesDisplay() {
+        const coordsDisplay = document.getElementById('mouse-coords');
+
+        if (!coordsDisplay) {
+            console.warn('Elemento mouse-coords no encontrado');
+            return;
+        }
+
+        // Actualizar coordenadas cuando el mouse se mueve sobre el mapa
+        this.map.on('mousemove', (e) => {
+            const lat = e.latlng.lat.toFixed(6);
+            const lng = e.latlng.lng.toFixed(6);
+            coordsDisplay.textContent = `Lat: ${lat}, Lng: ${lng}`;
+        });
+
+        // Resetear cuando el mouse sale del mapa
+        this.map.on('mouseout', () => {
+            coordsDisplay.textContent = 'Lat: --, Lng: --';
+        });
     }
 
     // ========================================
