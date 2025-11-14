@@ -78,18 +78,20 @@ class GeoVisor {
             maxZoom: 20
         });
 
-        // Google Satellite - Satélite de alta calidad hasta zoom 21
-        this.baseLayers.satellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        // Google Satellite con Calles y Límites superpuestos
+        const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
             attribution: '© Google',
             maxZoom: 21,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         });
 
-        // Esri World Boundaries and Places - Calles y límites
-        this.baseLayers.streets = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles © <a href="https://www.esri.com">Esri</a>',
+        const streetsLayer = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            attribution: ' | © Esri',
             maxZoom: 20
         });
+
+        // Combinar satélite + calles en un layerGroup
+        this.baseLayers.satellite = L.layerGroup([satelliteLayer, streetsLayer]);
 
         // Stamen Terrain - Terreno con relieve
         this.baseLayers.terrain = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png', {
