@@ -3,506 +3,516 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoVisor | Sistema de Información Geográfica</title>
+    <title>Visor GIS - Sistema de Información Geográfica</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Preconnect para mejorar velocidad de carga -->
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://mt1.google.com">
+    <link rel="dns-prefetch" href="https://tile.openstreetmap.org">
+    <link rel="dns-prefetch" href="https://server.arcgisonline.com">
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-    <!-- Leaflet Draw CSS (para medición) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <!-- Leaflet MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
-    <!-- Leaflet MiniMap CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.min.css" />
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Leaflet EasyPrint CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-easyprint@2.1.9/dist/bundle.css" />
-
-    <!-- Font Awesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Navbar Bootstrap -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <!-- Loader de página -->
+    <div id="page-loader">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <h4><i class="fas fa-water"></i> Cargando Visor GIS...</h4>
+            <p>Inicializando mapa y capas...</p>
+        </div>
+    </div>
+
+    <!-- Barra superior -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="#">
                 <i class="fas fa-globe-americas me-2 fs-4"></i>
                 <span class="fw-bold">GeoVisor</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="ms-auto d-flex align-items-center gap-2">
-                    <div class="input-group" style="width: 350px;">
-                        <input type="text" class="form-control" id="searchInput" placeholder="Buscar ubicación...">
-                        <button class="btn btn-light" type="button" id="searchBtn">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                    <button class="btn btn-light" id="coordinatesBtn" title="Mostrar/Ocultar Coordenadas">
-                        <i class="fas fa-crosshairs"></i>
-                    </button>
-                    <button class="btn btn-light" id="fullscreenBtn" title="Pantalla completa">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                </div>
+            <div class="navbar-nav ms-auto">
+                <button class="btn btn-outline-light btn-sm" id="btnSuministro">
+                    <i class="fas fa-water"></i> Suministro
+                </button>
+                <button class="btn btn-outline-light btn-sm ms-2" id="btnTabla">
+                    <i class="fas fa-table"></i>
+                </button>
+                <span class="navbar-text text-white ms-3">
+                    <i class="fas fa-user"></i> <span id="username">Usuario</span>
+                </span>
             </div>
         </div>
     </nav>
 
-    <!-- Main Container -->
     <div class="container-fluid p-0">
         <div class="row g-0">
-            <!-- Sidebar -->
-            <div class="col-auto sidebar" id="sidebar">
-                <div class="d-flex flex-column h-100">
-                    <div class="sidebar-header bg-light border-bottom p-3 d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Panel de Control</h5>
-                        <button class="btn btn-sm btn-outline-secondary" id="sidebarToggle">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
+            <!-- Panel lateral izquierdo -->
+            <div class="col-md-3 col-lg-2" id="sidebar">
+                <div class="sidebar-content">
+                    <div class="sidebar-header">
+                        <h5><i class="fas fa-layer-group"></i> CAPAS</h5>
                     </div>
 
-                    <div class="sidebar-content flex-grow-1 overflow-auto p-0">
-                        <div class="accordion" id="layersAccordion">
-                            <!-- Capa Base -->
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBase">
-                                        <i class="fas fa-map me-2"></i> Mapa Base
-                                    </button>
-                                </h2>
-                                <div id="collapseBase" class="accordion-collapse collapse show" data-bs-parent="#layersAccordion">
-                                    <div class="accordion-body">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="baseLayer" id="baseOSM" value="osm" checked>
-                                            <label class="form-check-label" for="baseOSM">
-                                                <i class="fas fa-map"></i> OpenStreetMap
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="baseLayer" id="baseSatellite" value="satellite">
-                                            <label class="form-check-label" for="baseSatellite">
-                                                <i class="fas fa-satellite"></i> Google Satélite + Calles
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="baseLayer" id="basePositron" value="cartodb">
-                                            <label class="form-check-label" for="basePositron">
-                                                <i class="far fa-lightbulb"></i> Claro (CartoDB)
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="baseLayer" id="baseDark" value="dark">
-                                            <label class="form-check-label" for="baseDark">
-                                                <i class="fas fa-moon"></i> Oscuro (CartoDB)
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="baseLayer" id="baseTopo" value="terrain">
-                                            <label class="form-check-label" for="baseTopo">
-                                                <i class="fas fa-mountain"></i> Topográfico
-                                            </label>
-                                        </div>
+                    <div class="accordion" id="layersAccordion">
+                        <!-- Capa Base -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBase">
+                                    <i class="fas fa-map"></i> Mapa Base
+                                </button>
+                            </h2>
+                            <div id="collapseBase" class="accordion-collapse collapse show" data-bs-parent="#layersAccordion">
+                                <div class="accordion-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="baseLayer" id="baseOSM" value="osm" checked>
+                                        <label class="form-check-label" for="baseOSM">
+                                            <i class="fas fa-map"></i> OpenStreetMap
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="baseLayer" id="baseSatellite" value="satellite">
+                                        <label class="form-check-label" for="baseSatellite">
+                                            <i class="fas fa-satellite"></i> Google Satélite
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="baseLayer" id="baseHybrid" value="hybrid">
+                                        <label class="form-check-label" for="baseHybrid">
+                                            <i class="fas fa-layer-group"></i> Google Híbrido
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="baseLayer" id="basePositron" value="positron">
+                                        <label class="form-check-label" for="basePositron">
+                                            <i class="far fa-lightbulb"></i> Claro (CartoDB)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="baseLayer" id="baseDark" value="dark">
+                                        <label class="form-check-label" for="baseDark">
+                                            <i class="fas fa-moon"></i> Oscuro (CartoDB)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="baseLayer" id="baseEsriSatellite" value="esri_satellite">
+                                        <label class="form-check-label" for="baseEsriSatellite">
+                                            <i class="fas fa-globe"></i> ESRI Satélite
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="baseLayer" id="baseTopo" value="topo">
+                                        <label class="form-check-label" for="baseTopo">
+                                            <i class="fas fa-mountain"></i> Topográfico
+                                        </label>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Comercial -->
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComercial">
-                                        <i class="far fa-square me-2"></i> Comercial
-                                    </button>
-                                </h2>
-                                <div id="collapseComercial" class="accordion-collapse collapse" data-bs-parent="#layersAccordion">
-                                    <div class="accordion-body p-0">
-                                        <ul class="layer-tree">
-                                            <!-- CATASTRO COMERCIAL -->
-                                            <li>
-                                                <div class="layer-category" data-category="catastro">
-                                                    <div class="layer-category-title">
-                                                        <i class="fas fa-chevron-right layer-category-icon"></i>
-                                                        <i class="fas fa-store"></i>
-                                                        <span>CATASTRO COMERCIAL</span>
+                        <!-- Comercial -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseComercial">
+                                    <i class="far fa-square"></i> Comercial
+                                </button>
+                            </h2>
+                            <div id="collapseComercial" class="accordion-collapse collapse" data-bs-parent="#layersAccordion">
+                                <div class="accordion-body" style="padding: 0;">
+                                    <ul class="layer-tree">
+                                        <!-- CATASTRO COMERCIAL -->
+                                        <li>
+                                            <div class="layer-category" data-category="catastro">
+                                                <div class="layer-category-title">
+                                                    <i class="fas fa-chevron-right layer-category-icon"></i>
+                                                    <i class="fas fa-store"></i>
+                                                    <span>CATASTRO COMERCIAL</span>
+                                                </div>
+                                            </div>
+                                            <div class="layer-subcategories">
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layerFichaComercial" data-layer="ficha_comercial">
+                                                        <label class="form-check-label" for="layerFichaComercial">
+                                                            <i class="fas fa-home" style="color: #cc0066; font-size: 0.6rem;"></i>
+                                                            Ficha Comercial
+                                                        </label>
                                                     </div>
                                                 </div>
-                                                <div class="layer-subcategories">
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layerFichaComercial" data-layer="ficha_comercial">
-                                                            <label class="form-check-label" for="layerFichaComercial">
-                                                                <i class="fas fa-home" style="color: #cc0066; font-size: 0.6rem;"></i>
-                                                                Ficha Comercial
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </li>
+                                            </div>
+                                        </li>
 
-                                            <!-- ALCANTARILLADO - COMPLEMENTO -->
-                                            <li>
-                                                <div class="layer-category" data-category="alcantarillado-comp">
-                                                    <div class="layer-category-title">
-                                                        <i class="fas fa-chevron-right layer-category-icon"></i>
-                                                        <i class="fas fa-network-wired"></i>
-                                                        <span>ALCANTARILLADO - OTROS</span>
+                                        <!-- ALCANTARILLADO - COMPLEMENTO -->
+                                        <li>
+                                            <div class="layer-category" data-category="alcantarillado-comp">
+                                                <div class="layer-category-title">
+                                                    <i class="fas fa-chevron-right layer-category-icon"></i>
+                                                    <i class="fas fa-network-wired"></i>
+                                                    <span>ALCANTARILLADO - OTROS</span>
+                                                </div>
+                                            </div>
+                                            <div class="layer-subcategories">
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_conexion_desague" data-layer="conexion_desague">
+                                                        <label class="form-check-label" for="layer_conexion_desague">
+                                                            <i class="fas fa-plug" style="color: #996600; font-size: 0.6rem;"></i>
+                                                            ConexionDesague
+                                                        </label>
                                                     </div>
                                                 </div>
-                                                <div class="layer-subcategories">
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_conexion_desague" data-layer="conexion_desague">
-                                                            <label class="form-check-label" for="layer_conexion_desague">
-                                                                <i class="fas fa-plug" style="color: #996600; font-size: 0.6rem;"></i>
-                                                                ConexionDesague
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                    </div>
+                                            </div>
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Técnico -->
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTecnico">
-                                        <i class="fas fa-cog me-2"></i> Técnico
-                                    </button>
-                                </h2>
-                                <div id="collapseTecnico" class="accordion-collapse collapse" data-bs-parent="#layersAccordion">
-                                    <div class="accordion-body p-0">
-                                        <ul class="layer-tree">
+                        <!-- Técnico -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTecnico">
+                                    <i class="fas fa-cog"></i> Técnico
+                                </button>
+                            </h2>
+                            <div id="collapseTecnico" class="accordion-collapse collapse" data-bs-parent="#layersAccordion">
+                                <div class="accordion-body" style="padding: 0;">
+                                    <ul class="layer-tree">
 
-                                            <!-- ESTRUCTURAS DE LA RED DE AGUA POTABLE -->
-                                            <li>
-                                                <div class="layer-category" data-category="agua-potable">
-                                                    <div class="layer-category-title">
-                                                        <i class="fas fa-chevron-right layer-category-icon"></i>
-                                                        <i class="fas fa-tint"></i>
-                                                        <span>AGUA POTABLE - ESTRUCTURAS</span>
+                                        <!-- ESTRUCTURAS DE LA RED DE AGUA POTABLE -->
+                                        <li>
+                                            <div class="layer-category" data-category="agua-potable">
+                                                <div class="layer-category-title">
+                                                    <i class="fas fa-chevron-right layer-category-icon"></i>
+                                                    <i class="fas fa-tint"></i>
+                                                    <span>AGUA POTABLE - ESTRUCTURAS</span>
+                                                </div>
+                                            </div>
+                                            <div class="layer-subcategories">
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_pozos_produccion" data-layer="pozos_produccion">
+                                                        <label class="form-check-label" for="layer_pozos_produccion">
+                                                            <i class="fas fa-circle" style="color: #0066cc; font-size: 0.6rem;"></i>
+                                                            Pozos de producción
+                                                        </label>
                                                     </div>
                                                 </div>
-                                                <div class="layer-subcategories">
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_pozos_produccion" data-layer="pozos_produccion">
-                                                            <label class="form-check-label" for="layer_pozos_produccion">
-                                                                <i class="fas fa-circle" style="color: #0066cc; font-size: 0.6rem;"></i>
-                                                                Pozos de producción
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_tanque_reservorio" data-layer="tanque_reservorio">
-                                                            <label class="form-check-label" for="layer_tanque_reservorio">
-                                                                <i class="fas fa-square" style="color: #00cc66; font-size: 0.6rem;"></i>
-                                                                Tanque Reservorio
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_lineas_agua" data-layer="lineas_agua">
-                                                            <label class="form-check-label" for="layer_lineas_agua">
-                                                                <i class="fas fa-minus" style="color: #0099ff; font-size: 0.6rem;"></i>
-                                                                Líneas de Agua
-                                                            </label>
-                                                        </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_tanque_reservorio" data-layer="tanque_reservorio">
+                                                        <label class="form-check-label" for="layer_tanque_reservorio">
+                                                            <i class="fas fa-square" style="color: #00cc66; font-size: 0.6rem;"></i>
+                                                            Tanque Reservorio
+                                                        </label>
                                                     </div>
                                                 </div>
-                                            </li>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_lineas_agua" data-layer="lineas_agua">
+                                                        <label class="form-check-label" for="layer_lineas_agua">
+                                                            <i class="fas fa-minus" style="color: #0099ff; font-size: 0.6rem;"></i>
+                                                            Líneas de Agua
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
 
-                                            <!-- RED DE DISTRIBUCIÓN DE AGUA POTABLE -->
-                                            <li>
-                                                <div class="layer-category" data-category="distribucion-agua">
-                                                    <div class="layer-category-title">
-                                                        <i class="fas fa-chevron-right layer-category-icon"></i>
-                                                        <i class="fas fa-project-diagram"></i>
-                                                        <span>AGUA POTABLE - DISTRIBUCIÓN</span>
+                                        <!-- RED DE DISTRIBUCIÓN DE AGUA POTABLE -->
+                                        <li>
+                                            <div class="layer-category" data-category="distribucion-agua">
+                                                <div class="layer-category-title">
+                                                    <i class="fas fa-chevron-right layer-category-icon"></i>
+                                                    <i class="fas fa-project-diagram"></i>
+                                                    <span>AGUA POTABLE - DISTRIBUCIÓN</span>
+                                                </div>
+                                            </div>
+                                            <div class="layer-subcategories">
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_tuberias" data-layer="tuberias">
+                                                        <label class="form-check-label" for="layer_tuberias">
+                                                            <i class="fas fa-minus" style="color: #0066ff; font-size: 0.6rem;"></i>
+                                                            Tuberías
+                                                        </label>
                                                     </div>
                                                 </div>
-                                                <div class="layer-subcategories">
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_tuberias" data-layer="tuberias">
-                                                            <label class="form-check-label" for="layer_tuberias">
-                                                                <i class="fas fa-minus" style="color: #0066ff; font-size: 0.6rem;"></i>
-                                                                Tuberías
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_linea_abandonada" data-layer="linea_abandonada">
-                                                            <label class="form-check-label" for="layer_linea_abandonada">
-                                                                <i class="fas fa-minus" style="color: #999999; font-size: 0.6rem;"></i>
-                                                                Línea Abandonada
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_hidrante" data-layer="hidrante">
-                                                            <label class="form-check-label" for="layer_hidrante">
-                                                                <i class="fas fa-fire-extinguisher" style="color: #ff0000; font-size: 0.6rem;"></i>
-                                                                Hidrante
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_valvula_compuerta" data-layer="valvula_compuerta">
-                                                            <label class="form-check-label" for="layer_valvula_compuerta">
-                                                                <i class="fas fa-circle" style="color: #cc6600; font-size: 0.6rem;"></i>
-                                                                Válvula de Compuerta
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_valvula_aire" data-layer="valvula_aire">
-                                                            <label class="form-check-label" for="layer_valvula_aire">
-                                                                <i class="fas fa-circle" style="color: #ffcc00; font-size: 0.6rem;"></i>
-                                                                Válvula de Aire
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_acometida_hidrante" data-layer="acometida_hidrante">
-                                                            <label class="form-check-label" for="layer_acometida_hidrante">
-                                                                <i class="fas fa-circle" style="color: #ff6600; font-size: 0.6rem;"></i>
-                                                                Acometida de Hidrante
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_macromedidor" data-layer="macromedidor">
-                                                            <label class="form-check-label" for="layer_macromedidor">
-                                                                <i class="fas fa-tachometer-alt" style="color: #9933cc; font-size: 0.6rem;"></i>
-                                                                Macromedidor
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_accesorios_red" data-layer="accesorios_red">
-                                                            <label class="form-check-label" for="layer_accesorios_red">
-                                                                <i class="fas fa-circle" style="color: #666666; font-size: 0.6rem;"></i>
-                                                                Accesorios de Red
-                                                            </label>
-                                                        </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_linea_abandonada" data-layer="linea_abandonada">
+                                                        <label class="form-check-label" for="layer_linea_abandonada">
+                                                            <i class="fas fa-minus" style="color: #999999; font-size: 0.6rem;"></i>
+                                                            Línea Abandonada
+                                                        </label>
                                                     </div>
                                                 </div>
-                                            </li>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_hidrante" data-layer="hidrante">
+                                                        <label class="form-check-label" for="layer_hidrante">
+                                                            <i class="fas fa-fire-extinguisher" style="color: #ff0000; font-size: 0.6rem;"></i>
+                                                            Hidrante
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_valvula_compuerta" data-layer="valvula_compuerta">
+                                                        <label class="form-check-label" for="layer_valvula_compuerta">
+                                                            <i class="fas fa-circle" style="color: #cc6600; font-size: 0.6rem;"></i>
+                                                            Válvula de Compuerta
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_valvula_aire" data-layer="valvula_aire">
+                                                        <label class="form-check-label" for="layer_valvula_aire">
+                                                            <i class="fas fa-circle" style="color: #ffcc00; font-size: 0.6rem;"></i>
+                                                            Válvula de Aire
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_acometida_hidrante" data-layer="acometida_hidrante">
+                                                        <label class="form-check-label" for="layer_acometida_hidrante">
+                                                            <i class="fas fa-circle" style="color: #ff6600; font-size: 0.6rem;"></i>
+                                                            Acometida de Hidrante
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_macromedidor" data-layer="macromedidor">
+                                                        <label class="form-check-label" for="layer_macromedidor">
+                                                            <i class="fas fa-tachometer-alt" style="color: #9933cc; font-size: 0.6rem;"></i>
+                                                            Macromedidor
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_accesorios_red" data-layer="accesorios_red">
+                                                        <label class="form-check-label" for="layer_accesorios_red">
+                                                            <i class="fas fa-circle" style="color: #666666; font-size: 0.6rem;"></i>
+                                                            Accesorios de Red
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
 
-                                            <!-- REDES DE ALCANTARILLADO SANITARIO -->
-                                            <li>
-                                                <div class="layer-category" data-category="alcantarillado">
-                                                    <div class="layer-category-title">
-                                                        <i class="fas fa-chevron-right layer-category-icon"></i>
-                                                        <i class="fas fa-toilet"></i>
-                                                        <span>ALCANTARILLADO - REDES</span>
+                                        <!-- REDES DE ALCANTARILLADO SANITARIO -->
+                                        <li>
+                                            <div class="layer-category" data-category="alcantarillado">
+                                                <div class="layer-category-title">
+                                                    <i class="fas fa-chevron-right layer-category-icon"></i>
+                                                    <i class="fas fa-toilet"></i>
+                                                    <span>ALCANTARILLADO - REDES</span>
+                                                </div>
+                                            </div>
+                                            <div class="layer-subcategories">
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_camara_inspeccion" data-layer="camara_inspeccion">
+                                                        <label class="form-check-label" for="layer_camara_inspeccion">
+                                                            <i class="fas fa-circle" style="color: #663300; font-size: 0.6rem;"></i>
+                                                            Cámara de Inspección
+                                                        </label>
                                                     </div>
                                                 </div>
-                                                <div class="layer-subcategories">
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_camara_inspeccion" data-layer="camara_inspeccion">
-                                                            <label class="form-check-label" for="layer_camara_inspeccion">
-                                                                <i class="fas fa-circle" style="color: #663300; font-size: 0.6rem;"></i>
-                                                                Cámara de Inspección
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_redes_gravedad" data-layer="redes_gravedad">
-                                                            <label class="form-check-label" for="layer_redes_gravedad">
-                                                                <i class="fas fa-minus" style="color: #996633; font-size: 0.6rem;"></i>
-                                                                Redes por Gravedad
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_red_presurizada" data-layer="red_presurizada">
-                                                            <label class="form-check-label" for="layer_red_presurizada">
-                                                                <i class="fas fa-minus" style="color: #cc9966; font-size: 0.6rem;"></i>
-                                                                Red Presurizada
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_ssfitting" data-layer="ssfitting">
-                                                            <label class="form-check-label" for="layer_ssfitting">
-                                                                <i class="fas fa-circle" style="color: #ff9900; font-size: 0.6rem;"></i>
-                                                                ssFitting
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_ssstructure" data-layer="ssstructure">
-                                                            <label class="form-check-label" for="layer_ssstructure">
-                                                                <i class="fas fa-square" style="color: #cc6600; font-size: 0.6rem;"></i>
-                                                                ssStructure
-                                                            </label>
-                                                        </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_redes_gravedad" data-layer="redes_gravedad">
+                                                        <label class="form-check-label" for="layer_redes_gravedad">
+                                                            <i class="fas fa-minus" style="color: #996633; font-size: 0.6rem;"></i>
+                                                            Redes por Gravedad
+                                                        </label>
                                                     </div>
                                                 </div>
-                                            </li>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_red_presurizada" data-layer="red_presurizada">
+                                                        <label class="form-check-label" for="layer_red_presurizada">
+                                                            <i class="fas fa-minus" style="color: #cc9966; font-size: 0.6rem;"></i>
+                                                            Red Presurizada
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_ssfitting" data-layer="ssfitting">
+                                                        <label class="form-check-label" for="layer_ssfitting">
+                                                            <i class="fas fa-circle" style="color: #ff9900; font-size: 0.6rem;"></i>
+                                                            ssFitting
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_ssstructure" data-layer="ssstructure">
+                                                        <label class="form-check-label" for="layer_ssstructure">
+                                                            <i class="fas fa-square" style="color: #cc6600; font-size: 0.6rem;"></i>
+                                                            ssStructure
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
 
-                                            <!-- ESTRUCTURAS DE LA RED DE ALCANTARILLADO SANITARIO -->
-                                            <li>
-                                                <div class="layer-category" data-category="estructuras-alcantarillado">
-                                                    <div class="layer-category-title">
-                                                        <i class="fas fa-chevron-right layer-category-icon"></i>
-                                                        <i class="fas fa-building"></i>
-                                                        <span>ALCANTARILLADO - ESTRUCTURAS</span>
+                                        <!-- ESTRUCTURAS DE LA RED DE ALCANTARILLADO SANITARIO -->
+                                        <li>
+                                            <div class="layer-category" data-category="estructuras-alcantarillado">
+                                                <div class="layer-category-title">
+                                                    <i class="fas fa-chevron-right layer-category-icon"></i>
+                                                    <i class="fas fa-building"></i>
+                                                    <span>ALCANTARILLADO - ESTRUCTURAS</span>
+                                                </div>
+                                            </div>
+                                            <div class="layer-subcategories">
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_estacion_bombeo" data-layer="estacion_bombeo">
+                                                        <label class="form-check-label" for="layer_estacion_bombeo">
+                                                            <i class="fas fa-industry" style="color: #990000; font-size: 0.6rem;"></i>
+                                                            Estación de bombeo
+                                                        </label>
                                                     </div>
                                                 </div>
-                                                <div class="layer-subcategories">
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_estacion_bombeo" data-layer="estacion_bombeo">
-                                                            <label class="form-check-label" for="layer_estacion_bombeo">
-                                                                <i class="fas fa-industry" style="color: #990000; font-size: 0.6rem;"></i>
-                                                                Estación de bombeo
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_planta_tratamiento" data-layer="planta_tratamiento">
-                                                            <label class="form-check-label" for="layer_planta_tratamiento">
-                                                                <i class="fas fa-industry" style="color: #006600; font-size: 0.6rem;"></i>
-                                                                Planta Tratamiento
-                                                            </label>
-                                                        </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_planta_tratamiento" data-layer="planta_tratamiento">
+                                                        <label class="form-check-label" for="layer_planta_tratamiento">
+                                                            <i class="fas fa-industry" style="color: #006600; font-size: 0.6rem;"></i>
+                                                            Planta Tratamiento
+                                                        </label>
                                                     </div>
                                                 </div>
-                                            </li>
+                                            </div>
+                                        </li>
 
-                                            <!-- CARTOGRAFÍA -->
-                                            <li>
-                                                <div class="layer-category" data-category="cartografia">
-                                                    <div class="layer-category-title">
-                                                        <i class="fas fa-chevron-right layer-category-icon"></i>
-                                                        <i class="fas fa-map-marked-alt"></i>
-                                                        <span>CARTOGRAFÍA</span>
+                                        <!-- CARTOGRAFÍA -->
+                                        <li>
+                                            <div class="layer-category" data-category="cartografia">
+                                                <div class="layer-category-title">
+                                                    <i class="fas fa-chevron-right layer-category-icon"></i>
+                                                    <i class="fas fa-map-marked-alt"></i>
+                                                    <span>CARTOGRAFÍA</span>
+                                                </div>
+                                            </div>
+                                            <div class="layer-subcategories">
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_control_geodesico" data-layer="control_geodesico">
+                                                        <label class="form-check-label" for="layer_control_geodesico">
+                                                            <i class="fas fa-crosshairs" style="color: #ff0000; font-size: 0.6rem;"></i>
+                                                            Control Geodésico
+                                                        </label>
                                                     </div>
                                                 </div>
-                                                <div class="layer-subcategories">
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_control_geodesico" data-layer="control_geodesico">
-                                                            <label class="form-check-label" for="layer_control_geodesico">
-                                                                <i class="fas fa-crosshairs" style="color: #ff0000; font-size: 0.6rem;"></i>
-                                                                Control Geodésico
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_calicata" data-layer="calicata">
-                                                            <label class="form-check-label" for="layer_calicata">
-                                                                <i class="fas fa-circle" style="color: #ffcc00; font-size: 0.6rem;"></i>
-                                                                Calicata
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_vias" data-layer="vias">
-                                                            <label class="form-check-label" for="layer_vias">
-                                                                <i class="fas fa-road" style="color: #333333; font-size: 0.6rem;"></i>
-                                                                Vías
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_manzana" data-layer="manzana">
-                                                            <label class="form-check-label" for="layer_manzana">
-                                                                <i class="fas fa-th-large" style="color: #666666; font-size: 0.6rem;"></i>
-                                                                Manzana
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_esquinas" data-layer="esquinas">
-                                                            <label class="form-check-label" for="layer_esquinas">
-                                                                <i class="fas fa-circle" style="color: #0066cc; font-size: 0.6rem;"></i>
-                                                                Esquinas
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="layer-item">
-                                                        <div class="form-check">
-                                                            <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_lotes" data-layer="lotes">
-                                                            <label class="form-check-label" for="layer_lotes">
-                                                                <i class="fas fa-square" style="color: #999999; font-size: 0.6rem;"></i>
-                                                                Lotes
-                                                            </label>
-                                                        </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_calicata" data-layer="calicata">
+                                                        <label class="form-check-label" for="layer_calicata">
+                                                            <i class="fas fa-circle" style="color: #ffcc00; font-size: 0.6rem;"></i>
+                                                            Calicata
+                                                        </label>
                                                     </div>
                                                 </div>
-                                            </li>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_vias" data-layer="vias">
+                                                        <label class="form-check-label" for="layer_vias">
+                                                            <i class="fas fa-road" style="color: #333333; font-size: 0.6rem;"></i>
+                                                            Vías
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_manzana" data-layer="manzana">
+                                                        <label class="form-check-label" for="layer_manzana">
+                                                            <i class="fas fa-th-large" style="color: #666666; font-size: 0.6rem;"></i>
+                                                            Manzana
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_esquinas" data-layer="esquinas">
+                                                        <label class="form-check-label" for="layer_esquinas">
+                                                            <i class="fas fa-circle" style="color: #0066cc; font-size: 0.6rem;"></i>
+                                                            Esquinas
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="layer-item">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input layer-toggle-wfs" type="checkbox" id="layer_lotes" data-layer="lotes">
+                                                        <label class="form-check-label" for="layer_lotes">
+                                                            <i class="fas fa-square" style="color: #999999; font-size: 0.6rem;"></i>
+                                                            Lotes
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
 
-                                        </ul>
-                                    </div>
+                                    </ul>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Herramientas -->
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHerramientas">
-                                        <i class="fas fa-tools me-2"></i> Herramientas
-                                    </button>
-                                </h2>
-                                <div id="collapseHerramientas" class="accordion-collapse collapse" data-bs-parent="#layersAccordion">
-                                    <div class="accordion-body">
-                                        <div class="row g-2">
-                                            <div class="col-6">
-                                                <button class="btn btn-outline-primary w-100" id="measureDistanceBtn" title="Medir Distancia">
-                                                    <i class="fas fa-ruler d-block mb-1"></i>
-                                                    <small>Distancia</small>
-                                                </button>
-                                            </div>
-                                            <div class="col-6">
-                                                <button class="btn btn-outline-primary w-100" id="measureAreaBtn" title="Medir Área">
-                                                    <i class="fas fa-draw-polygon d-block mb-1"></i>
-                                                    <small>Área</small>
-                                                </button>
-                                            </div>
-                                            <div class="col-6">
-                                                <button class="btn btn-outline-secondary w-100" id="printBtn" title="Imprimir Mapa">
-                                                    <i class="fas fa-print d-block mb-1"></i>
-                                                    <small>Imprimir</small>
-                                                </button>
-                                            </div>
-                                            <div class="col-6">
-                                                <button class="btn btn-outline-danger w-100" id="clearMeasurementsBtn" title="Limpiar Mediciones">
-                                                    <i class="fas fa-eraser d-block mb-1"></i>
-                                                    <small>Limpiar</small>
-                                                </button>
-                                            </div>
+                        <!-- Herramientas -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHerramientas">
+                                    <i class="fas fa-tools"></i> Herramientas
+                                </button>
+                            </h2>
+                            <div id="collapseHerramientas" class="accordion-collapse collapse" data-bs-parent="#layersAccordion">
+                                <div class="accordion-body">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <button class="btn btn-outline-primary w-100" id="measureDistanceBtn" title="Medir Distancia">
+                                                <i class="fas fa-ruler d-block mb-1"></i>
+                                                <small>Distancia</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button class="btn btn-outline-primary w-100" id="measureAreaBtn" title="Medir Área">
+                                                <i class="fas fa-draw-polygon d-block mb-1"></i>
+                                                <small>Área</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button class="btn btn-outline-secondary w-100" id="printBtn" title="Imprimir Mapa">
+                                                <i class="fas fa-print d-block mb-1"></i>
+                                                <small>Imprimir</small>
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button class="btn btn-outline-danger w-100" id="clearMeasurementsBtn" title="Limpiar Mediciones">
+                                                <i class="fas fa-eraser d-block mb-1"></i>
+                                                <small>Limpiar</small>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -512,53 +522,72 @@
                 </div>
             </div>
 
-            <!-- Map Container -->
-            <div class="col">
-                <div class="map-wrapper">
-                    <div id="map"></div>
+            <!-- Contenedor del mapa -->
+            <div class="col-md-9 col-lg-10 p-0">
+                <div id="map"></div>
 
-                    <!-- Coordinates Display -->
-                    <div class="coordinates-display card shadow-sm" id="coordinatesDisplay">
-                        <div class="card-body p-2">
-                            <small class="font-monospace" id="mouseCoords">Lat: 0.000000, Lng: 0.000000</small>
-                        </div>
-                    </div>
+                <!-- Panel derecho de herramientas -->
+                <div id="rightPanel">
+                    <button class="tool-btn" id="btnHome" title="Inicio">
+                        <i class="fas fa-home"></i>
+                        <span>Inicio</span>
+                    </button>
+                    <button class="tool-btn" id="btnGoogleMaps" title="Mapa Google">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Mapa Google</span>
+                    </button>
+                    <button class="tool-btn" id="btnSearch" title="Búsquedas Avanzadas">
+                        <i class="fas fa-search"></i>
+                        <span>Búsquedas Avanzadas</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Loading Spinner -->
-                    <div class="loading-spinner" id="loadingSpinner">
-                        <div class="card shadow-lg">
-                            <div class="card-body text-center">
-                                <div class="spinner-border text-primary mb-3" role="status">
-                                    <span class="visually-hidden">Cargando...</span>
-                                </div>
-                                <p class="mb-0">Cargando capas...</p>
-                            </div>
-                        </div>
+    <!-- Modal de búsqueda -->
+    <div class="modal fade" id="searchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Búsquedas Avanzadas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="searchType" class="form-label">Tipo de búsqueda:</label>
+                        <select class="form-select" id="searchType">
+                            <option value="suministro">Suministro</option>
+                            <option value="nombre">Nombre</option>
+                            <option value="direccion">Dirección</option>
+                        </select>
                     </div>
+                    <div class="mb-3">
+                        <label for="searchInput" class="form-label">Buscar:</label>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Ingrese término de búsqueda">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btnDoSearch">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Leaflet Draw JS (para medición) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <!-- Leaflet MarkerCluster JS -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-    <!-- Leaflet MiniMap JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.min.js"></script>
+    <!-- Proj4js para transformación de coordenadas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4leaflet/1.0.2/proj4leaflet.js"></script>
 
-    <!-- Leaflet EasyPrint JS -->
-    <script src="https://unpkg.com/leaflet-easyprint@2.1.9/dist/bundle.js"></script>
-
-    <!-- Leaflet WMS -->
-    <script src="https://unpkg.com/leaflet.wms@0.2.0/dist/leaflet.wms.js"></script>
-
-    <!-- Custom JS -->
-    <script src="js/map.js"></script>
+    <!-- Script principal -->
+    <script src="js/geovisor.js"></script>
 </body>
 </html>

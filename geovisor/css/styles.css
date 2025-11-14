@@ -16,226 +16,158 @@ body {
 }
 
 /* ========================================
+   Page Loader
+   ======================================== */
+#page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#page-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader-content {
+    text-align: center;
+    color: white;
+}
+
+.loader-content .spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loader-content h4 {
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.loader-content p {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* ========================================
+   Navbar
+   ======================================== */
+.navbar {
+    z-index: 1030;
+}
+
+.navbar-brand {
+    font-size: 1.25rem;
+}
+
+/* ========================================
    Sidebar
    ======================================== */
-.sidebar {
-    width: 320px;
-    height: calc(100vh - 56px);
-    background-color: #fff;
+#sidebar {
+    background-color: #f8f9fa;
     border-right: 1px solid #dee2e6;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
     transition: all 0.3s ease;
-    overflow: hidden;
 }
 
-.sidebar.collapsed {
-    width: 0;
-    border-right: none;
-}
-
-.sidebar-content {
-    max-height: calc(100vh - 120px);
-}
-
-.sidebar-content::-webkit-scrollbar {
+#sidebar::-webkit-scrollbar {
     width: 6px;
 }
 
-.sidebar-content::-webkit-scrollbar-track {
+#sidebar::-webkit-scrollbar-track {
     background: #f1f1f1;
 }
 
-.sidebar-content::-webkit-scrollbar-thumb {
+#sidebar::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 3px;
 }
 
-.sidebar-content::-webkit-scrollbar-thumb:hover {
+#sidebar::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+.sidebar-content {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.sidebar-header h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
 }
 
 /* ========================================
    Map Container
    ======================================== */
-.map-wrapper {
-    position: relative;
-    height: calc(100vh - 56px);
-    width: 100%;
-}
-
 #map {
     width: 100%;
-    height: 100%;
+    height: calc(100vh - 56px);
     z-index: 1;
 }
 
 /* ========================================
-   Coordinates Display
+   Accordion Customization
    ======================================== */
-.coordinates-display {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    z-index: 1000;
-    background-color: white;
-    min-width: 250px;
+.accordion-button {
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 12px 15px;
+    gap: 8px;
 }
 
-.coordinates-display.hidden {
-    display: none;
+.accordion-button i {
+    margin-right: 8px;
 }
 
-/* ========================================
-   Loading Spinner
-   ======================================== */
-.loading-spinner {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2000;
-    display: none;
+.accordion-button:not(.collapsed) {
+    background-color: #e7f1ff;
+    color: #0d6efd;
 }
 
-.loading-spinner.active {
-    display: block;
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0, 0, 0, 0.125);
 }
 
-/* ========================================
-   Layer List Items
-   ======================================== */
-.list-group-item {
-    cursor: pointer;
-    transition: background-color 0.2s ease;
+.accordion-body {
+    padding: 0;
 }
 
-.list-group-item:hover {
-    background-color: #f8f9fa;
+.accordion-body .form-check {
+    padding: 8px 15px;
 }
 
-.list-group-item input[type="radio"],
-.list-group-item input[type="checkbox"] {
-    cursor: pointer;
-}
-
-/* ========================================
-   Tool Buttons
-   ======================================== */
-.btn-outline-primary.active,
-.btn-outline-secondary.active,
-.btn-outline-danger.active {
-    background-color: var(--bs-primary);
-    color: white;
-    border-color: var(--bs-primary);
-}
-
-/* ========================================
-   Leaflet Custom Styles
-   ======================================== */
-.leaflet-control-zoom {
-    border: 2px solid rgba(0,0,0,0.2);
-    border-radius: 4px;
-}
-
-.leaflet-bar a {
-    color: #333;
-}
-
-.leaflet-popup-content-wrapper {
-    border-radius: 8px;
-}
-
-.leaflet-control-minimap {
-    border: 2px solid rgba(0,0,0,0.2);
-    border-radius: 4px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
-}
-
-/* ========================================
-   Custom Marker for Search
-   ======================================== */
-.custom-search-marker {
-    background: transparent;
-    border: none;
-}
-
-/* ========================================
-   Responsive Design
-   ======================================== */
-@media (max-width: 768px) {
-    .sidebar {
-        position: absolute;
-        z-index: 1050;
-        height: calc(100vh - 56px);
-        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-    }
-
-    .coordinates-display {
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-        min-width: auto;
-    }
-}
-
-/* ========================================
-   Utility Classes
-   ======================================== */
-.font-monospace {
-    font-family: 'Courier New', Courier, monospace;
-}
-
-/* ========================================
-   Animations
-   ======================================== */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-.fade-in {
-    animation: fadeIn 0.3s ease-in;
-}
-
-/* ========================================
-   Notification Styles
-   ======================================== */
-.notification {
-    position: fixed;
-    top: 70px;
-    right: 20px;
-    z-index: 9999;
-    min-width: 300px;
-    animation: slideInRight 0.3s ease-out;
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOutRight {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-.notification.hiding {
-    animation: slideOutRight 0.3s ease-in;
+.accordion-body .form-check:last-child {
+    padding-bottom: 8px;
 }
 
 /* ========================================
@@ -276,6 +208,7 @@ body {
 .layer-category-icon {
     transition: transform 0.3s ease;
     font-size: 0.8rem;
+    color: #6c757d;
 }
 
 .layer-category.expanded .layer-category-icon {
@@ -302,6 +235,7 @@ body {
 
 .layer-item .form-check {
     margin-bottom: 0;
+    padding: 0;
 }
 
 .layer-item .form-check-label {
@@ -312,25 +246,324 @@ body {
     font-size: 0.9rem;
 }
 
-/* Accordion customization */
-.accordion-button {
-    font-weight: 500;
-    font-size: 0.95rem;
+/* ========================================
+   Form Controls
+   ======================================== */
+.form-check-input {
+    cursor: pointer;
 }
 
-.accordion-button:not(.collapsed) {
-    background-color: #e7f1ff;
+.form-check-label {
+    cursor: pointer;
+}
+
+/* ========================================
+   Right Panel Tools
+   ======================================== */
+#rightPanel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tool-btn {
+    background: white;
+    border: 2px solid #0d6efd;
+    border-radius: 8px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
     color: #0d6efd;
+    font-weight: 500;
+    min-width: 180px;
 }
 
-.accordion-body {
+.tool-btn i {
+    font-size: 1.1rem;
+}
+
+.tool-btn:hover {
+    background: #0d6efd;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tool-btn:active {
+    transform: translateY(0);
+}
+
+/* ========================================
+   Tool Buttons in Sidebar
+   ======================================== */
+.btn-outline-primary.active,
+.btn-outline-secondary.active,
+.btn-outline-danger.active {
+    background-color: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+}
+
+/* ========================================
+   Leaflet Custom Styles
+   ======================================== */
+.leaflet-control-zoom {
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.leaflet-bar a {
+    color: #333;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
     padding: 0;
 }
 
-.accordion-body .form-check {
-    padding: 8px 0;
+.leaflet-popup-content {
+    margin: 0;
 }
 
-.accordion-body .form-check:last-child {
-    padding-bottom: 0;
+/* Custom Popup Styles */
+.feature-popup {
+    min-width: 250px;
+}
+
+.feature-popup .popup-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 15px;
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.feature-popup .popup-body {
+    padding: 15px;
+}
+
+.feature-popup .popup-body table {
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.feature-popup .popup-body table tr {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.feature-popup .popup-body table tr:last-child {
+    border-bottom: none;
+}
+
+.feature-popup .popup-body table td {
+    padding: 6px 8px;
+}
+
+.feature-popup .popup-body table td:first-child {
+    font-weight: 600;
+    color: #495057;
+    width: 40%;
+}
+
+.feature-popup .popup-image {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    margin-top: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.feature-popup .popup-image:hover {
+    transform: scale(1.05);
+}
+
+/* ========================================
+   Loading Spinner
+   ======================================== */
+.loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    display: none;
+}
+
+.loading-spinner.active {
+    display: block;
+}
+
+/* ========================================
+   Leaflet MarkerCluster Styles
+   ======================================== */
+.marker-cluster-small {
+    background-color: rgba(110, 204, 57, 0.6);
+}
+
+.marker-cluster-small div {
+    background-color: rgba(110, 204, 57, 0.8);
+}
+
+.marker-cluster-medium {
+    background-color: rgba(241, 196, 15, 0.6);
+}
+
+.marker-cluster-medium div {
+    background-color: rgba(241, 196, 15, 0.8);
+}
+
+.marker-cluster-large {
+    background-color: rgba(231, 76, 60, 0.6);
+}
+
+.marker-cluster-large div {
+    background-color: rgba(231, 76, 60, 0.8);
+}
+
+.marker-cluster {
+    background-clip: padding-box;
+    border-radius: 20px;
+}
+
+.marker-cluster div {
+    width: 30px;
+    height: 30px;
+    margin-left: 5px;
+    margin-top: 5px;
+    text-align: center;
+    border-radius: 15px;
+    font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+.marker-cluster span {
+    line-height: 30px;
+    color: white;
+    font-weight: bold;
+}
+
+/* ========================================
+   Modal Styles
+   ======================================== */
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+@media (max-width: 768px) {
+    #sidebar {
+        position: absolute;
+        z-index: 1050;
+        width: 100%;
+        max-width: 320px;
+        height: calc(100vh - 56px);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        transform: translateX(-100%);
+    }
+
+    #sidebar.show {
+        transform: translateX(0);
+    }
+
+    #rightPanel {
+        top: 70px;
+        right: 10px;
+    }
+
+    .tool-btn {
+        min-width: auto;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    .tool-btn span {
+        display: none;
+    }
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+.font-monospace {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+@media print {
+    #sidebar,
+    #rightPanel,
+    .navbar {
+        display: none !important;
+    }
+
+    #map {
+        height: 100vh !important;
+        width: 100vw !important;
+    }
 }
