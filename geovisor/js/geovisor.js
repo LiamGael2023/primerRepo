@@ -9,8 +9,10 @@ class GeoVisor {
         this.currentBaseLayer = null;
         this.dataLayers = {};
         this.clusterGroups = {};
+        this.drawnItems = null;
         this.measurementLayers = L.layerGroup();
-        this.currentMeasureTool = null;
+        this.miniMap = null;
+        this.drawControl = null;
 
         // Configuración de GeoServer
         this.geoserverUrl = 'http://localhost:8080/geoserver';
@@ -49,10 +51,12 @@ class GeoVisor {
 
         this.initMap();
         this.initBaseLayers();
+        this.initMiniMap();
+        this.initDrawControls();
+        this.initPrintControl();
         this.initEventListeners();
         this.initLayerCategories();
         this.initWFSLayers();
-        this.initToolButtons();
     }
 
     // ========================================
@@ -64,8 +68,8 @@ class GeoVisor {
             center: this.defaultCenter,
             zoom: this.defaultZoom,
             zoomControl: true,
-            preferCanvas: true,
-            renderer: L.canvas()
+            minZoom: 2,
+            maxZoom: 22
         });
 
         // Posicionar controles de zoom
@@ -82,9 +86,6 @@ class GeoVisor {
                 }
             );
         }
-
-        // Agregar capa de mediciones
-        this.map.addLayer(this.measurementLayers);
     }
 
     // ========================================
@@ -105,14 +106,15 @@ class GeoVisor {
         });
 
         // Google Hybrid (Satellite + Streets)
-        this.baseLayers.hybrid = L.layerGroup([
-            L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-                maxZoom: 22
-            }),
-            L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 20
-            })
-        ]);
+        const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 22
+        });
+
+        const streetsLayer = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 20
+        });
+
+        this.baseLayers.hybrid = L.layerGroup([satelliteLayer, streetsLayer]);
 
         // CartoDB Positron (Claro)
         this.baseLayers.positron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -141,6 +143,128 @@ class GeoVisor {
         // Añadir capa base por defecto
         this.currentBaseLayer = this.baseLayers.osm;
         this.currentBaseLayer.addTo(this.map);
+    }
+
+    // ========================================
+    // Mini Mapa
+    // ========================================
+    initMiniMap() {
+        const miniMapLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, © CARTO'
+        });
+
+        this.miniMap = new L.Control.MiniMap(miniMapLayer, {
+            toggleDisplay: true,
+            minimized: false,
+            position: 'bottomright',
+            width: 150,
+            height: 150,
+            zoomLevelOffset: -5
+        }).addTo(this.map);
+    }
+
+    // ========================================
+    // Controles de Dibujo/Medición
+    // ========================================
+    initDrawControls() {
+        this.drawnItems = new L.FeatureGroup();
+        this.map.addLayer(this.drawnItems);
+        this.map.addLayer(this.measurementLayers);
+
+        // Configurar opciones de dibujo
+        this.drawControl = new L.Control.Draw({
+            position: 'topright',
+            draw: {
+                polyline: {
+                    shapeOptions: {
+                        color: '#0d6efd',
+                        weight: 3
+                    },
+                    metric: true,
+                    feet: false,
+                    showLength: true
+                },
+                polygon: {
+                    shapeOptions: {
+                        color: '#198754',
+                        weight: 3
+                    },
+                    showArea: true,
+                    metric: true
+                },
+                circle: false,
+                rectangle: false,
+                marker: false,
+                circlemarker: false
+            },
+            edit: {
+                featureGroup: this.drawnItems,
+                remove: true
+            }
+        });
+
+        // Eventos de dibujo
+        this.map.on(L.Draw.Event.CREATED, (e) => {
+            const layer = e.layer;
+            const type = e.layerType;
+
+            if (type === 'polyline') {
+                const distance = this.calculateDistance(layer);
+                layer.bindPopup(`<div class="p-2"><strong>Distancia:</strong><br>${distance}</div>`).openPopup();
+            } else if (type === 'polygon') {
+                const area = this.calculateArea(layer);
+                layer.bindPopup(`<div class="p-2"><strong>Área:</strong><br>${area}</div>`).openPopup();
+            }
+
+            this.measurementLayers.addLayer(layer);
+        });
+    }
+
+    // ========================================
+    // Calcular Distancia
+    // ========================================
+    calculateDistance(layer) {
+        const latlngs = layer.getLatLngs();
+        let distance = 0;
+
+        for (let i = 0; i < latlngs.length - 1; i++) {
+            distance += latlngs[i].distanceTo(latlngs[i + 1]);
+        }
+
+        if (distance >= 1000) {
+            return `${(distance / 1000).toFixed(2)} km`;
+        } else {
+            return `${distance.toFixed(2)} m`;
+        }
+    }
+
+    // ========================================
+    // Calcular Área
+    // ========================================
+    calculateArea(layer) {
+        const area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+
+        if (area >= 1000000) {
+            return `${(area / 1000000).toFixed(2)} km²`;
+        } else if (area >= 10000) {
+            return `${(area / 10000).toFixed(2)} ha`;
+        } else {
+            return `${area.toFixed(2)} m²`;
+        }
+    }
+
+    // ========================================
+    // Control de Impresión
+    // ========================================
+    initPrintControl() {
+        L.easyPrint({
+            title: 'Imprimir Mapa',
+            position: 'topright',
+            sizeModes: ['Current', 'A4Portrait', 'A4Landscape'],
+            filename: 'geovisor_map',
+            exportOnly: true,
+            hideControlContainer: true
+        }).addTo(this.map);
     }
 
     // ========================================
@@ -197,6 +321,24 @@ class GeoVisor {
         if (btnTabla) {
             btnTabla.addEventListener('click', () => {
                 this.showNotification('Vista de tabla en desarrollo', 'info');
+            });
+        }
+
+        // Búsqueda en el header
+        const searchBtn = document.getElementById('searchBtn');
+        const searchInput = document.getElementById('searchInput');
+
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => {
+                this.performSearch();
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.performSearch();
+                }
             });
         }
     }
@@ -313,7 +455,6 @@ class GeoVisor {
     // ========================================
     createMarker(feature, latlng, layerName) {
         const color = this.getLayerColor(layerName);
-        const icon = this.getLayerIcon(layerName);
 
         return L.circleMarker(latlng, {
             radius: 6,
@@ -358,22 +499,6 @@ class GeoVisor {
             'conexion_desague': '#996600'
         };
         return colors[layerName] || '#0d6efd';
-    }
-
-    // ========================================
-    // Obtener Icono por Capa
-    // ========================================
-    getLayerIcon(layerName) {
-        const icons = {
-            'ficha_comercial': 'fa-home',
-            'pozos_produccion': 'fa-circle',
-            'hidrante': 'fa-fire-extinguisher',
-            'macromedidor': 'fa-tachometer-alt',
-            'estacion_bombeo': 'fa-industry',
-            'planta_tratamiento': 'fa-industry',
-            'control_geodesico': 'fa-crosshairs'
-        };
-        return icons[layerName] || 'fa-circle';
     }
 
     // ========================================
@@ -481,10 +606,9 @@ class GeoVisor {
     // Activar Herramienta de Medición
     // ========================================
     activateMeasureTool(type) {
-        // Desactivar herramienta anterior
-        if (this.currentMeasureTool) {
-            this.map.off('click');
-            this.currentMeasureTool = null;
+        // Remover controles de dibujo anteriores si existen
+        if (this.map._toolbarContainer) {
+            this.map.removeControl(this.drawControl);
         }
 
         // Actualizar estilos de botones
@@ -494,148 +618,20 @@ class GeoVisor {
 
         if (type === 'distance') {
             document.getElementById('measureDistanceBtn').classList.add('active');
-            this.startDistanceMeasurement();
+
+            // Activar herramienta de línea
+            this.map.addControl(this.drawControl);
+            new L.Draw.Polyline(this.map, this.drawControl.options.draw.polyline).enable();
+
         } else if (type === 'area') {
             document.getElementById('measureAreaBtn').classList.add('active');
-            this.startAreaMeasurement();
+
+            // Activar herramienta de polígono
+            this.map.addControl(this.drawControl);
+            new L.Draw.Polygon(this.map, this.drawControl.options.draw.polygon).enable();
         }
 
-        this.currentMeasureTool = type;
-    }
-
-    // ========================================
-    // Medición de Distancia
-    // ========================================
-    startDistanceMeasurement() {
-        let points = [];
-        let polyline = null;
-        let markers = [];
-
-        const measureClick = (e) => {
-            points.push(e.latlng);
-
-            // Añadir marcador
-            const marker = L.circleMarker(e.latlng, {
-                radius: 5,
-                color: '#0d6efd',
-                fillColor: '#fff',
-                fillOpacity: 1
-            }).addTo(this.measurementLayers);
-            markers.push(marker);
-
-            // Actualizar línea
-            if (polyline) {
-                this.measurementLayers.removeLayer(polyline);
-            }
-
-            if (points.length > 1) {
-                polyline = L.polyline(points, {
-                    color: '#0d6efd',
-                    weight: 3
-                }).addTo(this.measurementLayers);
-
-                const distance = this.calculateDistance(points);
-                polyline.bindPopup(`<strong>Distancia:</strong> ${distance}`).openPopup();
-            }
-        };
-
-        const measureDblClick = () => {
-            this.map.off('click', measureClick);
-            this.map.off('dblclick', measureDblClick);
-            document.getElementById('measureDistanceBtn').classList.remove('active');
-            this.currentMeasureTool = null;
-            points = [];
-            markers = [];
-        };
-
-        this.map.on('click', measureClick);
-        this.map.on('dblclick', measureDblClick);
-
-        this.showNotification('Haz clic en el mapa para medir distancia. Doble clic para finalizar.', 'info');
-    }
-
-    // ========================================
-    // Medición de Área
-    // ========================================
-    startAreaMeasurement() {
-        let points = [];
-        let polygon = null;
-        let markers = [];
-
-        const measureClick = (e) => {
-            points.push(e.latlng);
-
-            // Añadir marcador
-            const marker = L.circleMarker(e.latlng, {
-                radius: 5,
-                color: '#198754',
-                fillColor: '#fff',
-                fillOpacity: 1
-            }).addTo(this.measurementLayers);
-            markers.push(marker);
-
-            // Actualizar polígono
-            if (polygon) {
-                this.measurementLayers.removeLayer(polygon);
-            }
-
-            if (points.length > 2) {
-                polygon = L.polygon(points, {
-                    color: '#198754',
-                    weight: 3,
-                    fillOpacity: 0.2
-                }).addTo(this.measurementLayers);
-
-                const area = this.calculateArea(points);
-                polygon.bindPopup(`<strong>Área:</strong> ${area}`).openPopup();
-            }
-        };
-
-        const measureDblClick = () => {
-            this.map.off('click', measureClick);
-            this.map.off('dblclick', measureDblClick);
-            document.getElementById('measureAreaBtn').classList.remove('active');
-            this.currentMeasureTool = null;
-            points = [];
-            markers = [];
-        };
-
-        this.map.on('click', measureClick);
-        this.map.on('dblclick', measureDblClick);
-
-        this.showNotification('Haz clic en el mapa para medir área. Doble clic para finalizar.', 'info');
-    }
-
-    // ========================================
-    // Calcular Distancia
-    // ========================================
-    calculateDistance(points) {
-        let distance = 0;
-        for (let i = 0; i < points.length - 1; i++) {
-            distance += points[i].distanceTo(points[i + 1]);
-        }
-
-        if (distance >= 1000) {
-            return `${(distance / 1000).toFixed(2)} km`;
-        } else {
-            return `${distance.toFixed(2)} m`;
-        }
-    }
-
-    // ========================================
-    // Calcular Área
-    // ========================================
-    calculateArea(points) {
-        const polygon = L.polygon(points);
-        const area = L.GeometryUtil.geodesicArea(polygon.getLatLngs()[0]);
-
-        if (area >= 1000000) {
-            return `${(area / 1000000).toFixed(2)} km²`;
-        } else if (area >= 10000) {
-            return `${(area / 10000).toFixed(2)} ha`;
-        } else {
-            return `${area.toFixed(2)} m²`;
-        }
+        this.showNotification(`Herramienta de medición de ${type === 'distance' ? 'distancia' : 'área'} activada`, 'info');
     }
 
     // ========================================
@@ -643,13 +639,9 @@ class GeoVisor {
     // ========================================
     clearMeasurements() {
         this.measurementLayers.clearLayers();
+        this.drawnItems.clearLayers();
 
-        if (this.currentMeasureTool) {
-            this.map.off('click');
-            this.map.off('dblclick');
-            this.currentMeasureTool = null;
-        }
-
+        // Remover estado activo de botones
         document.querySelectorAll('#measureDistanceBtn, #measureAreaBtn').forEach(btn => {
             btn.classList.remove('active');
         });
@@ -661,80 +653,63 @@ class GeoVisor {
     // Imprimir Mapa
     // ========================================
     printMap() {
-        window.print();
+        // Trigger del plugin EasyPrint
+        const printBtn = document.querySelector('.leaflet-control-easyPrint-button');
+        if (printBtn) {
+            printBtn.click();
+        } else {
+            // Fallback a imprimir la ventana
+            window.print();
+        }
     }
 
     // ========================================
-    // Inicializar Botones del Panel Derecho
+    // Búsqueda de Ubicación
     // ========================================
-    initToolButtons() {
-        // Botón Home
-        const btnHome = document.getElementById('btnHome');
-        if (btnHome) {
-            btnHome.addEventListener('click', () => {
-                this.map.setView(this.defaultCenter, this.defaultZoom);
-            });
-        }
-
-        // Botón Google Maps
-        const btnGoogleMaps = document.getElementById('btnGoogleMaps');
-        if (btnGoogleMaps) {
-            btnGoogleMaps.addEventListener('click', () => {
-                const center = this.map.getCenter();
-                const zoom = this.map.getZoom();
-                const url = `https://www.google.com/maps/@${center.lat},${center.lng},${zoom}z`;
-                window.open(url, '_blank');
-            });
-        }
-
-        // Botón Búsqueda
-        const btnSearch = document.getElementById('btnSearch');
-        const searchModal = new bootstrap.Modal(document.getElementById('searchModal'));
-
-        if (btnSearch) {
-            btnSearch.addEventListener('click', () => {
-                searchModal.show();
-            });
-        }
-
-        // Ejecutar búsqueda
-        const btnDoSearch = document.getElementById('btnDoSearch');
-        if (btnDoSearch) {
-            btnDoSearch.addEventListener('click', () => {
-                this.performAdvancedSearch();
-            });
-        }
-
-        // Enter en input de búsqueda
+    async performSearch() {
         const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.performAdvancedSearch();
-                }
-            });
-        }
-    }
+        const query = searchInput.value.trim();
 
-    // ========================================
-    // Realizar Búsqueda Avanzada
-    // ========================================
-    async performAdvancedSearch() {
-        const searchType = document.getElementById('searchType').value;
-        const searchInput = document.getElementById('searchInput').value.trim();
-
-        if (!searchInput) {
-            this.showNotification('Ingrese un término de búsqueda', 'warning');
+        if (!query) {
+            this.showNotification('Por favor, ingresa una ubicación para buscar', 'warning');
             return;
         }
 
-        // En un sistema real, esto haría una consulta al servidor
-        // Por ahora, mostramos un mensaje
-        this.showNotification(`Buscando ${searchType}: ${searchInput}...`, 'info');
+        try {
+            // Usar Nominatim de OpenStreetMap para geocodificación
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+            const response = await fetch(url);
+            const data = await response.json();
 
-        // Cerrar modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('searchModal'));
-        modal.hide();
+            if (data && data.length > 0) {
+                const result = data[0];
+                const lat = parseFloat(result.lat);
+                const lon = parseFloat(result.lon);
+
+                // Centrar el mapa en el resultado
+                this.map.setView([lat, lon], 15);
+
+                // Añadir marcador
+                const marker = L.marker([lat, lon], {
+                    icon: L.divIcon({
+                        className: 'custom-search-marker',
+                        html: '<i class="fas fa-map-marker-alt text-danger" style="font-size: 2rem;"></i>',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 30]
+                    })
+                }).addTo(this.map);
+
+                marker.bindPopup(`<div class="p-2"><strong>${result.display_name}</strong></div>`).openPopup();
+
+                this.showNotification('Ubicación encontrada', 'success');
+            } else {
+                this.showNotification('No se encontraron resultados', 'warning');
+            }
+
+        } catch (error) {
+            console.error('Error en la búsqueda:', error);
+            this.showNotification('Error al realizar la búsqueda', 'danger');
+        }
     }
 
     // ========================================
