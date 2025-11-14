@@ -26,6 +26,8 @@ class GeoVisor {
         this.initPrintControl();
         this.initEventListeners();
         this.initCoordinatesDisplay();
+        this.initLayerCategories();
+        this.initWFSLayers();
     }
 
     // ========================================
@@ -606,6 +608,84 @@ class GeoVisor {
         toast.addEventListener('hidden.bs.toast', () => {
             document.body.removeChild(toastContainer);
         });
+    }
+
+    // ========================================
+    // Inicializar Categorías de Capas (Expandir/Colapsar)
+    // ========================================
+    initLayerCategories() {
+        const categories = document.querySelectorAll('.layer-category');
+
+        categories.forEach(category => {
+            const title = category.querySelector('.layer-category-title');
+            const subcategories = category.nextElementSibling;
+
+            if (title && subcategories && subcategories.classList.contains('layer-subcategories')) {
+                title.addEventListener('click', () => {
+                    // Toggle expanded class
+                    category.classList.toggle('expanded');
+
+                    // Toggle subcategories visibility
+                    subcategories.classList.toggle('show');
+                });
+            }
+        });
+    }
+
+    // ========================================
+    // Inicializar Capas WFS
+    // ========================================
+    initWFSLayers() {
+        const wfsCheckboxes = document.querySelectorAll('.layer-toggle-wfs');
+        const geoserverUrl = 'http://localhost:8080/geoserver';  // URL base
+
+        wfsCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const layerName = e.target.dataset.layer;
+                const isChecked = e.target.checked;
+
+                if (isChecked) {
+                    this.addWFSLayer(layerName, geoserverUrl);
+                } else {
+                    this.removeWFSLayer(layerName);
+                }
+            });
+        });
+    }
+
+    // ========================================
+    // Añadir Capa WFS
+    // ========================================
+    addWFSLayer(layerName, geoserverUrl) {
+        try {
+            // Crear capa WMS (más eficiente que WFS para visualización)
+            const wmsLayer = L.tileLayer.wms(`${geoserverUrl}/wms`, {
+                layers: `cite:${layerName}`,  // Ajustar el workspace según configuración
+                format: 'image/png',
+                transparent: true,
+                version: '1.1.1',
+                attribution: `Layer: ${layerName}`
+            });
+
+            wmsLayer.addTo(this.map);
+            this.dataLayers[layerName] = wmsLayer;
+
+            console.log(`Capa ${layerName} añadida`);
+        } catch (error) {
+            console.error(`Error al añadir capa ${layerName}:`, error);
+            this.showNotification(`Error al cargar la capa ${layerName}`, 'danger');
+        }
+    }
+
+    // ========================================
+    // Remover Capa WFS
+    // ========================================
+    removeWFSLayer(layerName) {
+        if (this.dataLayers[layerName]) {
+            this.map.removeLayer(this.dataLayers[layerName]);
+            delete this.dataLayers[layerName];
+            console.log(`Capa ${layerName} removida`);
+        }
     }
 }
 

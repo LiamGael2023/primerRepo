@@ -237,3 +237,100 @@ body {
 .notification.hiding {
     animation: slideOutRight 0.3s ease-in;
 }
+
+/* ========================================
+   Layer Tree Styles
+   ======================================== */
+.layer-tree {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.layer-tree li {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.layer-tree li:last-child {
+    border-bottom: none;
+}
+
+.layer-category {
+    cursor: pointer;
+    user-select: none;
+}
+
+.layer-category-title {
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+}
+
+.layer-category-title:hover {
+    background-color: #e9ecef;
+}
+
+.layer-category-icon {
+    transition: transform 0.3s ease;
+    font-size: 0.8rem;
+}
+
+.layer-category.expanded .layer-category-icon {
+    transform: rotate(90deg);
+}
+
+.layer-subcategories {
+    display: none;
+    background-color: #fff;
+}
+
+.layer-subcategories.show {
+    display: block;
+}
+
+.layer-item {
+    padding: 8px 15px 8px 35px;
+    transition: background-color 0.2s ease;
+}
+
+.layer-item:hover {
+    background-color: #f8f9fa;
+}
+
+.layer-item .form-check {
+    margin-bottom: 0;
+}
+
+.layer-item .form-check-label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+}
+
+/* Accordion customization */
+.accordion-button {
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+}
+
+.accordion-body {
+    padding: 0;
+}
+
+.accordion-body .form-check {
+    padding: 8px 0;
+}
+
+.accordion-body .form-check:last-child {
+    padding-bottom: 0;
+}
